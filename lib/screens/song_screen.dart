@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:audio_video_progress_bar/audio_video_progress_bar.dart';
+import 'package:just_audio/just_audio.dart';
 
 import 'package:music_app/models/music.dart';
 import 'package:music_app/data/music_data.dart';
@@ -15,6 +16,14 @@ class SongScreen extends StatefulWidget{
 }
 
 class _SongScreenState extends State<SongScreen> {
+
+  late AudioPlayer _audioPlayer;
+
+  @override
+  void initState() {
+    super.initState();
+    _audioPlayer = AudioPlayer()..setAsset(widget.song.musicLink);
+  }
 
   bool _isClicked = false;
   @override
@@ -70,8 +79,8 @@ class _SongScreenState extends State<SongScreen> {
             width: MediaQuery.of(context).size.width * 0.9,
             height: 130,
             child: ProgressBar(
-                progress: const Duration(milliseconds: 0),
-                total: const Duration(minutes: 4,seconds: 30),
+                progress: _audioPlayer.position ,
+                total: _audioPlayer.duration ?? const Duration() ,
                 progressBarColor: Theme.of(context).colorScheme.primary,
                 baseBarColor: Theme.of(context).colorScheme.secondary.withOpacity(0.5),
                 thumbColor: Theme.of(context).colorScheme.primary,
@@ -82,9 +91,9 @@ class _SongScreenState extends State<SongScreen> {
                 timeLabelTextStyle: Theme.of(context).textTheme.titleMedium!.copyWith(color: Theme.of(context).colorScheme.secondary, fontWeight: FontWeight.bold),
 
 
-                // onSeek: (duration){
-                //   _player.seek(duration);
-                // },
+                onSeek: (duration){
+                  _audioPlayer.seek(duration);
+                },
                 ),
           ),
           Row(
@@ -99,9 +108,19 @@ class _SongScreenState extends State<SongScreen> {
                   iconSize: 50
               ),
               IconButton(onPressed: (){
-                setState(() {
-                  _isClicked = _isClicked ? false: true;
-                });
+                  if(_isClicked){
+                    setState(() {
+                      _isClicked = false;
+                    });
+
+                      _audioPlayer.pause();
+                    }else{
+                    setState(() {
+                      _isClicked = true;
+                    });
+                    _audioPlayer.play();
+                  }
+                  // _isClicked = _isClicked ? false: true;
                 },
                   icon: _isClicked ? const Icon(Icons.pause_circle_filled_sharp)
                       : const Icon(Icons.play_circle_filled_sharp),
