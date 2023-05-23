@@ -8,9 +8,11 @@ import 'package:music_app/data/music_data.dart';
 
 class SongScreen extends StatefulWidget{
 
-  const SongScreen({super.key, required this.song, required this.currentIndex});
+  const SongScreen({super.key, required this.song, required this.currentIndex, this.isRepeat = false, this.isLoop = false, });
   final Music song;
   final int currentIndex;
+  final bool isLoop;
+  final bool isRepeat;
   @override
   State<SongScreen> createState() => _SongScreenState();
 }
@@ -22,7 +24,7 @@ class _SongScreenState extends State<SongScreen> {
   @override
   void initState() {
     super.initState();
-    _audioPlayer = AudioPlayer()..setAsset(widget.song.musicLink);
+    _audioPlayer = AudioPlayer()..setAsset(widget.song.musicLink)..positionStream;
   }
 
   bool _isClicked = false;
@@ -30,9 +32,9 @@ class _SongScreenState extends State<SongScreen> {
   Widget build(BuildContext context) {
     final data = MusicData().musicList;
 
-    void navigate(int index){
+    void navigate(int index, bool isLoop, bool isRepeat){
       if(index < data.length && index>=0){
-        Navigator.of(context).push(MaterialPageRoute(builder: (ctx)=>SongScreen(song: data[index], currentIndex: index,)));
+        Navigator.of(context).push(MaterialPageRoute(builder: (ctx)=>SongScreen(song: data[index], currentIndex: index, isRepeat: isRepeat, isLoop: isLoop, )));
       }else{
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('No other song available',textAlign: TextAlign.center, style: Theme.of(context).textTheme.titleMedium!.copyWith(color: Colors.white)),backgroundColor: Colors.black.withOpacity(0.4),elevation: 5,));
       }
@@ -78,30 +80,36 @@ class _SongScreenState extends State<SongScreen> {
           SizedBox(
             width: MediaQuery.of(context).size.width * 0.9,
             height: 130,
-            child: ProgressBar(
-                progress: _audioPlayer.position ,
-                total: _audioPlayer.duration ?? const Duration() ,
-                progressBarColor: Theme.of(context).colorScheme.primary,
-                baseBarColor: Theme.of(context).colorScheme.secondary.withOpacity(0.5),
-                thumbColor: Theme.of(context).colorScheme.primary,
-                thumbGlowColor: Colors.transparent,
-                thumbRadius: 9,
-                barHeight: 5,
-                timeLabelPadding: 20,
-                timeLabelTextStyle: Theme.of(context).textTheme.titleMedium!.copyWith(color: Theme.of(context).colorScheme.secondary, fontWeight: FontWeight.bold),
-
-
-                onSeek: (duration){
-                  _audioPlayer.seek(duration);
-                },
-                ),
+            child: StreamBuilder<Duration>(
+              stream: _audioPlayer.positionStream,
+              builder: (context, snapshot) {
+                return ProgressBar(
+                  progress: snapshot.data ?? const Duration(),
+                  total: _audioPlayer.duration ?? const Duration(),
+                  progressBarColor: Theme.of(context).colorScheme.primary,
+                  baseBarColor: Theme.of(context).colorScheme.secondary.withOpacity(0.5),
+                  thumbColor: Theme.of(context).colorScheme.primary,
+                  thumbGlowColor: Colors.transparent,
+                  thumbRadius: 9,
+                  barHeight: 5,
+                  timeLabelPadding: 20,
+                  timeLabelTextStyle: Theme.of(context).textTheme.titleMedium!
+                      .copyWith(color: Theme.of(context).colorScheme.secondary,
+                      fontWeight: FontWeight.bold),
+                  onSeek: (duration) {
+                    _audioPlayer.seek(duration);
+                  },
+                );
+              },
+            ),
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               IconButton(onPressed: (){
                 Navigator.of(context).pop();
-                navigate(widget.currentIndex-1);
+                // prev song
+                navigate(widget.currentIndex-1, widget.isRepeat, widget.isLoop);
               },
                   icon: const Icon(Icons.skip_previous_sharp),
                   color: Theme.of(context).colorScheme.primary,
@@ -120,8 +128,8 @@ class _SongScreenState extends State<SongScreen> {
                     });
                     _audioPlayer.play();
                   }
-                  // _isClicked = _isClicked ? false: true;
                 },
+
                   icon: _isClicked ? const Icon(Icons.pause_circle_filled_sharp)
                       : const Icon(Icons.play_circle_filled_sharp),
                   color: Theme.of(context).colorScheme.primary,
@@ -129,7 +137,8 @@ class _SongScreenState extends State<SongScreen> {
               ),
               IconButton(onPressed: (){
                 Navigator.of(context).pop();
-                navigate(widget.currentIndex+1);
+                //next song
+                navigate(widget.currentIndex+1, widget.isRepeat, widget.isLoop);
               },
                   icon: const Icon(Icons.skip_next_sharp),
                   color: Theme.of(context).colorScheme.primary,
