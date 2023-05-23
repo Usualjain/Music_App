@@ -8,6 +8,7 @@ class Music{
     required this.artist,
     required this.url,
     required this.musicLink,
+    required this.isFav,
   }):id = uuid.v4();
 
   final String id;
@@ -15,4 +16,5 @@ class Music{
   final String artist;
   final String url;
   final String musicLink;
+  final bool isFav;
 }

@@ -15,12 +15,14 @@ class MusicItem extends StatelessWidget{
 
   @override
   Widget build(BuildContext context) {
+    double deviceHeight = MediaQuery.of(context).size.height- MediaQuery.of(context).padding.bottom;
+    double deviceWidth = MediaQuery.of(context).size.width;
 
     return ListView.separated(
       separatorBuilder: (context, index) =>
           Divider(color: Theme.of(context).colorScheme.secondary,
-            indent: 15,
-            endIndent: 15,
+            indent: deviceWidth*0.04,
+            endIndent: deviceWidth*0.04,
           ),
       padding: const EdgeInsets.all(0),
       itemCount: data.length,
@@ -29,10 +31,10 @@ class MusicItem extends StatelessWidget{
               title: Text(data[index].title, style: Theme.of(context).textTheme.titleMedium!.copyWith(fontWeight: FontWeight.bold),),
               subtitle: Text(data[index].artist),
               leading: SizedBox(
-                  height: 55,
-                  width: 55,
+                  height: deviceHeight*0.1,
+                  width: deviceWidth*0.13,
                   child: ClipRRect(
-                      borderRadius: BorderRadius.circular(6),
+                      borderRadius: BorderRadius.circular(deviceHeight*0.01),
                       child: Image.network(data[index].url,
                         fit: BoxFit.fill, )
                   )
