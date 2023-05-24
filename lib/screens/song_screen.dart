@@ -28,10 +28,30 @@ class _SongScreenState extends State<SongScreen> {
   final data = MusicData().musicList;
 
   void navigate(int index, bool isLoop, bool isRepeat, bool isShuffle){
-    if(index < data.length && index>=0){
-      Navigator.of(context).push(MaterialPageRoute(builder: (ctx)=>SongScreen(song: data[index], currentIndex: index, isRepeat: isRepeat, isLoop: isLoop, isShuffle: isShuffle,)));
+    if((index < data.length && index>=0)){
+        Navigator.of(context).push(MaterialPageRoute(
+            builder: (ctx) => SongScreen(
+                  song: data[index],
+                  currentIndex: index,
+                  isRepeat: isRepeat,
+                  isLoop: isLoop,
+                  isShuffle: isShuffle,
+                )));
     }else{
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('End of playlist',textAlign: TextAlign.center, style: Theme.of(context).textTheme.titleMedium!.copyWith(color: Colors.white)),backgroundColor: Colors.black.withOpacity(0.4),elevation: 5,));
+      if(isLoop){
+        Navigator.of(context).push(MaterialPageRoute(builder: (ctx)=>SongScreen(song: data[0], currentIndex: 0, isRepeat: isRepeat, isLoop: isLoop, isShuffle: isShuffle,)));
+      }else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('End of playlist',
+              textAlign: TextAlign.center,
+              style: Theme.of(context)
+                  .textTheme
+                  .titleMedium!
+                  .copyWith(color: Colors.white)),
+          backgroundColor: Colors.black.withOpacity(0.4),
+          elevation: 5,
+        ));
+      }
     }
   }
 
@@ -42,10 +62,13 @@ class _SongScreenState extends State<SongScreen> {
     _audioPlayer = AudioPlayer()..setAsset(widget.song.musicLink)..positionStream;
 
     _audioPlayer.positionStream.listen((event) {
-      if(_audioPlayer.position == _audioPlayer.duration) {
+      if(_audioPlayer.position >= _audioPlayer.duration!) {
         setState(() {
           _isPlaying = false;
+          _audioPlayer.seek(const Duration());
+          _audioPlayer.stop();
         });
+        // _audioPlayer.seek(const Duration());
         if(widget.isRepeat) {
           Navigator.of(context).pop();
           navigate(widget.currentIndex, widget.isLoop, widget.isRepeat, widget.isShuffle);
@@ -75,9 +98,9 @@ class _SongScreenState extends State<SongScreen> {
 
   @override
   Widget build(BuildContext context) {
-    double deviceHeight = MediaQuery.of(context).size.height- MediaQuery.of(context).padding.bottom;
-    double deviceWidth = MediaQuery.of(context).size.width;
     double deviceNotch = MediaQuery.of(context).padding.top;
+    double deviceHeight = MediaQuery.of(context).size.height- deviceNotch - MediaQuery.of(context).padding.bottom;
+    double deviceWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
       body: Column(
@@ -87,37 +110,43 @@ class _SongScreenState extends State<SongScreen> {
 
           Stack(
             children: [
-              Icon(Icons.circle,color: Theme.of(context).colorScheme.secondary.withOpacity(0.4),size: (deviceHeight-deviceNotch)*0.08, ),
+              Icon(Icons.circle,color: Theme.of(context).colorScheme.secondary.withOpacity(0.4),size: (deviceHeight)*0.08, ),
               IconButton(
                 onPressed: (){Navigator.of(context).pop();},
                 icon: const Icon(Icons.keyboard_arrow_down_sharp, ),
-                iconSize: (deviceHeight-deviceNotch)*0.06,
+                iconSize: (deviceHeight)*0.06,
                 color: Theme.of(context).colorScheme.primary,
                 // iconSize: 35,
               ),
             ],
           ),
 
-          SizedBox(height: (deviceHeight-deviceNotch)*0.06, width: double.infinity,),
-          CircleAvatar(radius: (deviceHeight-deviceNotch)*0.144 ,
+          SizedBox(height: (deviceHeight)*0.06, width: double.infinity,),
+          CircleAvatar(radius: (deviceHeight)*0.15 ,
             backgroundImage: NetworkImage(widget.song.url),
           ),
-          SizedBox(height: (deviceHeight-deviceNotch)*0.06, width: double.infinity,),
-          Text(widget.song.title,
-              style: Theme.of(context).textTheme.headlineMedium!.copyWith(
-                  color: Theme.of(context).colorScheme.secondary,
-                  fontWeight: FontWeight.bold)
+          SizedBox(height: (deviceHeight)*0.06, width: double.infinity,),
+          SizedBox(
+            height: (deviceHeight)*0.05,
+            child: Text(widget.song.title,
+                style: Theme.of(context).textTheme.headlineMedium!.copyWith(
+                    color: Theme.of(context).colorScheme.secondary,
+                    fontWeight: FontWeight.bold)
+            ),
           ),
-          SizedBox(height: (deviceHeight-deviceNotch)*0.012, width: double.infinity,),
-          Text(widget.song.artist,
-            style: Theme.of(context).textTheme.titleMedium!.copyWith(
-                color: Theme.of(context).colorScheme.secondary.withOpacity(0.8),
-                fontWeight: FontWeight.bold),
+          SizedBox(height: (deviceHeight)*0.01, width: double.infinity,),
+          SizedBox(
+            height: deviceHeight*0.02,
+            child: Text(widget.song.artist,
+              style: Theme.of(context).textTheme.titleMedium!.copyWith(
+                  color: Theme.of(context).colorScheme.secondary.withOpacity(0.8),
+                  fontWeight: FontWeight.bold),
+            ),
           ),
-          SizedBox(height: (deviceHeight-deviceNotch)*0.048, width: double.infinity,),
+          SizedBox(height: (deviceHeight)*0.05, width: double.infinity,),
           SizedBox(
             width: MediaQuery.of(context).size.width * 0.9,
-            height: (deviceHeight-deviceNotch)*0.14,
+            height: (deviceHeight)*0.12,
             child: StreamBuilder<Duration>(
               stream: _audioPlayer.positionStream,
               builder: (context, snapshot) {
@@ -141,47 +170,50 @@ class _SongScreenState extends State<SongScreen> {
               },
             ),
           ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              IconButton(onPressed: (){
-                Navigator.of(context).pop();
-                // prev song
-                navigate(widget.currentIndex-1, widget.isLoop, widget.isRepeat, widget.isShuffle,);
-              },
-                  icon: const Icon(Icons.skip_previous_sharp),
-                  color: Theme.of(context).colorScheme.primary,
-                  iconSize: (deviceWidth-MediaQuery.of(context).padding.left-MediaQuery.of(context).padding.right)*0.14
-              ),
-              IconButton(onPressed: (){
-                  if(_isPlaying){
-                    setState(() {
-                      _isPlaying = false;
-                    });
-                      _audioPlayer.pause();
-                    }else{
-                    setState(() {
-                      _isPlaying = true;
-                    });
-                    _audioPlayer.play();
-                  }
+          SizedBox(
+            height: deviceHeight * 0.15,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                IconButton(onPressed: (){
+                  Navigator.of(context).pop();
+                  // prev song
+                  navigate(widget.currentIndex-1, widget.isLoop, widget.isRepeat, widget.isShuffle,);
                 },
-                  icon: (_isPlaying) ? const Icon(Icons.pause_circle_filled_sharp)
-                      : const Icon(Icons.play_circle_filled_sharp),
-                  color: Theme.of(context).colorScheme.primary,
-                  iconSize: (deviceWidth-MediaQuery.of(context).padding.left-MediaQuery.of(context).padding.right)*0.16
-              ),
-              IconButton(onPressed: (){
-                // _audioPlayer.stop();
-                Navigator.of(context).pop();
-                //next song
-                navigate(widget.currentIndex+1,  widget.isLoop, widget.isRepeat, widget.isShuffle);
-              },
-                  icon: const Icon(Icons.skip_next_sharp),
-                  color: Theme.of(context).colorScheme.primary,
-                  iconSize: (deviceWidth-MediaQuery.of(context).padding.left-MediaQuery.of(context).padding.right)*0.14
-              ),
-            ],
+                    icon: const Icon(Icons.skip_previous_sharp),
+                    color: Theme.of(context).colorScheme.primary,
+                    iconSize: (deviceWidth-MediaQuery.of(context).padding.left-MediaQuery.of(context).padding.right)*0.14
+                ),
+                IconButton(onPressed: (){
+                    if(_isPlaying){
+                      setState(() {
+                        _isPlaying = false;
+                      });
+                        _audioPlayer.pause();
+                      }else{
+                      setState(() {
+                        _isPlaying = true;
+                      });
+                      _audioPlayer.play();
+                    }
+                  },
+                    icon: (_isPlaying) ? const Icon(Icons.pause_circle_filled_sharp)
+                        : const Icon(Icons.play_circle_filled_sharp),
+                    color: Theme.of(context).colorScheme.primary,
+                    iconSize: (deviceWidth-MediaQuery.of(context).padding.left-MediaQuery.of(context).padding.right)*0.16
+                ),
+                IconButton(onPressed: (){
+                  // _audioPlayer.stop();
+                  Navigator.of(context).pop();
+                  //next song
+                  navigate(widget.currentIndex+1,  widget.isLoop, widget.isRepeat, widget.isShuffle);
+                },
+                    icon: const Icon(Icons.skip_next_sharp),
+                    color: Theme.of(context).colorScheme.primary,
+                    iconSize: (deviceWidth-MediaQuery.of(context).padding.left-MediaQuery.of(context).padding.right)*0.14
+                ),
+              ],
+            ),
           ),
         ],
       ),
